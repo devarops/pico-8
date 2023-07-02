@@ -55,7 +55,7 @@ end
 -- update
 
 function update_position()
- get_new_position()
+ update_all_positions()
  keep_player_inside()
  update_player_frame()
 end
@@ -89,16 +89,33 @@ end
 -->8
 -- update helpers
 
-function get_new_position()
- get_new_player_position()
- get_new_cat_position()
+function update_all_positions()
+ update_player_position()
+ update_cat_position()
+end
+
+function update_player_position()
+ update_sprite_position(player,move_player)
+end
+ 
+function update_cat_position()
+ update_sprite_position(cat,move_cat_x)
+ update_sprite_position(cat,move_cat_y)
 end
 
 
-function get_new_player_position()
- local x = player.x
- local y = player.y
- local delta = player.delta
+function update_sprite_position(obj,move)
+ local new_position = move(obj)
+ if not is_blocked(new_position) then
+   obj.x = new_position.x
+   obj.y = new_position.y
+ end
+end
+
+function move_player(obj)
+ local x = obj.x
+ local y = obj.y
+ local delta = obj.delta
  if (btn(⬅️)) x -= delta
  if (btn(➡️)) x += delta
  if (btn(⬆️)) y -= delta
@@ -106,31 +123,31 @@ function get_new_player_position()
  local new_position = {}
  new_position.x = x
  new_position.y = y
- if is_blocked(new_position) then
-   sfx(0)
- else
-   player.x = new_position.x
-   player.y = new_position.y
- end
+ return new_position
 end
 
-function get_new_cat_position()
- local x = cat.x
- local y = cat.y
- local delta = cat.delta
+function move_cat_x(obj)
+ local x = obj.x
+ local y = obj.y
+ local delta = obj.delta
  if (player.x<x) x -= delta
  if (player.x>x) x += delta
+ local new_position = {}
+ new_position.x = x
+ new_position.y = y
+ return new_position
+end
+
+function move_cat_y(obj)
+ local x = obj.x
+ local y = obj.y
+ local delta = obj.delta
  if (player.y<y) y -= delta
  if (player.y>y) y += delta
  local new_position = {}
  new_position.x = x
  new_position.y = y
- if is_blocked(new_position) then
-   -- sfx(0)
- else
-   cat.x = new_position.x
-   cat.y = new_position.y
- end
+ return new_position
 end
 
 function keep_player_inside()
