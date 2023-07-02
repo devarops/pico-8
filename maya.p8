@@ -8,6 +8,8 @@ function _init()
  flag = {
   blocked = 0,
   food = 1,
+  energy = 2,
+  cheese = 3,
  }
  player = {
   x=60,
@@ -15,9 +17,10 @@ function _init()
   delta= nil,
   sprite= nil,
   flip_x = false,
-  food = 0,
+  energy = 0,
+  cheese = 0,
  }
- food = {
+ energy = {
   timer = 3,
   is_timer_running = false
  }
@@ -67,18 +70,18 @@ end
 
 function update_inventory()
  if is_food(player) then
-  eat()
+  eat(player)
  end
 end
 
 function update_status()
-  if (player.food > 0) then
-   food.is_timer_running = ((time() - food.time) < food.timer)
-   if not food.is_timer_running then
-    player.food -= 1
+  if (player.energy > 0) then
+   energy.is_timer_running = ((time() - energy.time) < energy.timer)
+   if not energy.is_timer_running then
+    player.energy = 0
    end
   end
-  player.delta = player.food+1
+  player.delta = player.energy+1
 end
 
 function update_camera()
@@ -151,13 +154,14 @@ function move_cat_y(obj)
 end
 
 function keep_player_inside()
- player.x = mid(0,player.x,3*128-8)
+ level = player.cheese + 1
+ player.x = mid(0,player.x,level*128-8)
  player.y = mid(0,player.y,128-9)
 end
 
 function update_player_frame()
   local base_sprite = 1
-  if food.is_timer_running then
+  if energy.is_timer_running then
    base_sprite = 3
   end
   player.sprite=(player.x+player.y)%2+base_sprite
@@ -171,6 +175,13 @@ function is_food(obj)
   return is_flagged(obj,flag.food)
 end
 
+function is_energy(obj)
+  return is_flagged(obj,flag.energy)
+end
+
+function is_cheese(obj)
+  return is_flagged(obj,flag.cheese)
+end
 
 function is_flagged(obj,a_flag)
  local x = obj.x
@@ -204,10 +215,14 @@ function is_flagged(obj,a_flag)
  return false
 end
 
-function eat()
-  player.food += 1
-  food.time = time()
-  remove_food()
+function eat(obj)
+ if is_energy(obj) then
+  obj.energy += 1
+  energy.time = time()
+ elseif is_cheese(obj) then
+  obj.cheese += 1
+ end
+ remove_food()
 end
 
 function remove_food()
@@ -393,7 +408,7 @@ __label__
 33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333
 
 __gff__
-0000000000000000000000000001800200000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000010a0600000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 1f1f1f1f1f1f1f1f1e1e1e1f1f1f1f1f1f1f1f1f1f1f0e1f1f1f11211e1f1f1f1f1f1f1f1f1f0e1f1f1f1f1f1f1f1f1f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
