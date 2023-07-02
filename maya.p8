@@ -27,9 +27,10 @@ function _init()
  cat = {
   x=9*8,
   y=1*8,
-  delta= 1,
+  delta= 0.9,
   sprite= 17,
   flip_x = false,
+  dead = false,
  }
  cam = {
   x = 0
@@ -37,6 +38,11 @@ function _init()
  tile = {
   x_map = nil,
   y_map = nil,
+ }
+ game = {
+  is_over = false,
+  is_won = false,
+  is_lost = false,
  }
  log = {}
 end
@@ -50,9 +56,13 @@ function _update()
 end
 
 function _draw()
-	draw_map()
-	draw_camera()
-	draw_player()
+	if game.is_over then
+	 draw_game_over()
+	else
+		draw_map()
+		draw_camera()
+		draw_player()
+	end
 end
 -->8
 -- update
@@ -75,13 +85,10 @@ function update_inventory()
 end
 
 function update_status()
-  if (player.energy > 0) then
-   energy.is_timer_running = ((time() - energy.time) < energy.timer)
-   if not energy.is_timer_running then
-    player.energy = 0
-   end
-  end
-  player.delta = player.energy+1
+ update_energy_status()
+ update_cat_status()
+ update_caught_status()
+ update_won_status()
 end
 
 function update_camera()
@@ -94,7 +101,9 @@ end
 
 function update_all_positions()
  update_player_position()
- update_cat_position()
+ if not cat.dead then
+  update_cat_position()
+ end
 end
 
 function update_player_position()
@@ -105,7 +114,6 @@ function update_cat_position()
  update_sprite_position(cat,move_cat_x)
  update_sprite_position(cat,move_cat_y)
 end
-
 
 function update_sprite_position(obj,move)
  local new_position = move(obj)
@@ -228,6 +236,42 @@ end
 function remove_food()
  mset(tile.x_map,tile.y_map,0)
 end
+
+function update_energy_status()
+  if (player.energy > 0) then
+   energy.is_timer_running = ((time() - energy.time) < energy.timer)
+   if not energy.is_timer_running then
+    player.energy = 0
+   end
+  end
+  player.delta = player.energy+1
+end
+
+function update_caught_status()
+ if is_caught() then
+  game.is_lost = true
+  game.is_over = true
+ end
+end
+
+function is_caught()
+ diff_x = abs(player.x-cat.x)
+ diff_y = abs(player.y-cat.y)
+ return (diff_x < 6) and (diff_y < 6) and (not cat.dead)
+end
+
+function update_cat_status()
+ if player.cheese == 1 then
+  cat.dead = true
+ end
+end
+
+function update_won_status()
+ if player.cheese >= 3 then
+  game.is_won = true
+  game.is_over = true
+ end
+end
 -->8
 -- draw
 
@@ -242,7 +286,21 @@ end
 
 function draw_player()
 	spr(player.sprite, player.x, player.y, 1, 1, player.flip_x)
-	spr(cat.sprite, cat.x, cat.y, 1, 1, cat.flip_x)
+	spr(cat.sprite, cat.x, cat.y, 1, 1, cat.flip_x, cat.dead)
+end
+
+function draw_game_over()
+  local x1 = flr(player.x/128)*128+128/2-30
+  local y1 = flr(player.y/128)*128+128/2-20
+  local x2 = flr(player.x/128)*128+128/2+30
+  local y2 = flr(player.y/128)*128+128/2+5
+  rectfill(x1,y1,x2,y2,0)
+  if game.is_won then
+   message = "you won!"
+  elseif game.is_lost then
+   message = "game over"
+  end
+  print(message,x1+14,y1+10,7)
 end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000333333333333333333333333
