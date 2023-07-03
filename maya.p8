@@ -56,13 +56,13 @@ function _update()
 end
 
 function _draw()
-	if game.is_over then
-	 draw_game_over()
-	else
-		draw_map()
-		draw_camera()
-		draw_player()
-	end
+ if game.is_over then
+  draw_game_over()
+ else
+  draw_map()
+  draw_camera()
+  draw_player()
+ end
 end
 -->8
 -- update
@@ -277,16 +277,16 @@ end
 
 function draw_map()
  cls(3)
-	map()
+ map()
 end
 
 function draw_camera()
-	camera(cam.x)
+ camera(cam.x)
 end
 
 function draw_player()
-	spr(player.sprite, player.x, player.y, 1, 1, player.flip_x)
-	spr(cat.sprite, cat.x, cat.y, 1, 1, cat.flip_x, cat.dead)
+ spr(player.sprite, player.x, player.y, 1, 1, player.flip_x)
+ spr(cat.sprite, cat.x, cat.y, 1, 1, cat.flip_x, cat.dead)
 end
 
 function draw_game_over()
