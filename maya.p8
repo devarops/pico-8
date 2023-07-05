@@ -5,46 +5,13 @@ __lua__
 -- by maya
 
 function _init()
- flag = {
-  blocked = 0,
-  food = 1,
-  energy = 2,
-  cheese = 3,
- }
- player = {
-  x=60,
-  y=60,
-  delta= nil,
-  sprite= nil,
-  flip_x = false,
-  energy = 0,
-  cheese = 0,
- }
- energy = {
-  timer = 3,
-  is_timer_running = false
- }
- cat = {
-  x=9*8,
-  y=1*8,
-  delta= 0.9,
-  sprite= 17,
-  flip_x = false,
-  dead = false,
- }
- cam = {
-  x = 0
- }
- tile = {
-  x_map = nil,
-  y_map = nil,
- }
- game = {
-  is_over = false,
-  is_won = false,
-  is_lost = false,
- }
- log = {}
+ define_flags()
+ init_player()
+ init_energy()
+ init_cat()
+ init_tile()
+ init_camera()
+ init_game()
 end
 
 function _update()
@@ -65,17 +32,79 @@ function _draw()
  end
 end
 -->8
+-- init
+function define_flags()
+  flag = {
+   blocked = 0,
+   food = 1,
+   energy = 2,
+   cheese = 3,
+  }
+ end
+ 
+ function init_player()
+  player = {
+   x=60,
+   y=60,
+   delta= nil,
+   sprite= nil,
+   flip_x = false,
+   energy = 0,
+   cheese = 0,
+  }
+ end
+ 
+ function init_energy()
+  energy = {
+   timer = 3,
+   is_timer_running = false
+  }
+ end
+ 
+ function init_cat()
+  cat = {
+   x=9*8,
+   y=1*8,
+   delta= 0.9,
+   sprite= 17,
+   flip_x = false,
+   dead = false,
+  }
+ end
+ 
+ function init_camera()
+  cam = {
+   x = 0
+  }
+ end
+ 
+ function init_tile()
+  tile = {
+   x_map = nil,
+   y_map = nil,
+  }
+ end
+ 
+ function init_game()
+  game = {
+   is_over = false,
+   is_won = false,
+   is_lost = false,
+   is_debug = false,
+  }
+ end
+-->8
 -- update
 
 function update_position()
  update_all_positions()
  keep_player_inside()
- update_player_frame()
+ update_all_frames()
 end
 
 function update_orientation()
- if (btnp(⬅️)) player.flip_x = true
- if (btnp(➡️)) player.flip_x = false
+ update_player_orientation()
+ update_cat_orientation()
 end
 
 function update_inventory()
@@ -141,8 +170,13 @@ function move_cat_x(obj)
  local x = obj.x
  local y = obj.y
  local delta = obj.delta
- if (player.x<x) x -= delta
- if (player.x>x) x += delta
+ if abs(x-player.x)>delta then
+  if (player.x<x) then
+   x -= delta
+  elseif (player.x>x) then
+   x += delta
+  end
+ end
  local new_position = {}
  new_position.x = x
  new_position.y = y
@@ -167,6 +201,11 @@ function keep_player_inside()
  player.y = mid(0,player.y,128-9)
 end
 
+function update_all_frames()
+ update_player_frame()
+ update_cat_frame()
+end
+
 function update_player_frame()
   local base_sprite = 1
   if energy.is_timer_running then
@@ -174,6 +213,22 @@ function update_player_frame()
   end
   player.sprite=(player.x+player.y)%2+base_sprite
 end
+
+function update_cat_frame()
+  local base_sprite = 17
+  cat.sprite=(cat.x+cat.y)%2+base_sprite
+end
+
+
+function update_player_orientation()
+ if (btnp(⬅️)) player.flip_x = true
+ if (btnp(➡️)) player.flip_x = false
+end
+
+function update_cat_orientation()
+ cat.flip_x = (cat.x > player.x)
+end
+
 
 function is_blocked(obj)
   return is_flagged(obj,flag.blocked)
@@ -196,7 +251,7 @@ function is_flagged(obj,a_flag)
  local y = obj.y
  local x1 = flr((x+1)/8)
  local y1 = flr((y+1)/8)
- local x2 = flr((x+6)/8)
+ local x2 = flr((x+7)/8)
  local y2 = flr((y+7)/8)
  if fget(mget(x2, y2), a_flag) then
   tile.x_map = x2
@@ -302,6 +357,7 @@ function draw_game_over()
   end
   print(message,x1+14,y1+10,7)
 end
+
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000333333333333333333333333
 000000000007770000077700067777000677770000000000000000000000000000000000000000000000000000000000000000003bbb8bb33333333333334333
