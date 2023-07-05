@@ -28,7 +28,7 @@ function _draw()
  else
   draw_map()
   draw_camera()
-  draw_player()
+  draw_all_characters()
  end
 end
 -->8
@@ -49,6 +49,7 @@ function define_flags()
    delta= nil,
    sprite= nil,
    flip_x = false,
+   flip_y = false,
    energy = 0,
    cheese = 0,
   }
@@ -339,8 +340,16 @@ function draw_camera()
  camera(cam.x)
 end
 
+function draw_all_characters()
+ draw_player()
+ draw_cat()
+end
+
 function draw_player()
  spr(player.sprite, player.x, player.y, 1, 1, player.flip_x)
+end
+
+function draw_cat()
  spr(cat.sprite, cat.x, cat.y, 1, 1, cat.flip_x, cat.dead)
 end
 
