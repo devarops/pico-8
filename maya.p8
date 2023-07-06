@@ -54,6 +54,9 @@ function init_player()
     flip_y = false,
     energy = 0,
     cheese = 0,
+    update_position = function(self)
+      update_sprite_position(self, move_player)
+    end,
     draw = function(self)
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x)
     end
@@ -68,6 +71,12 @@ function init_cat()
     sprite = 17,
     flip_x = false,
     dead = false,
+    update_position = function(self)
+      if not self.dead then
+        update_sprite_position(self, move_cat_x)
+        update_sprite_position(self, move_cat_y)
+      end
+    end,
     draw = function(self)
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x, self.dead)
     end
@@ -113,7 +122,7 @@ end
 -- update
 
 function update_position()
-  update_all_positions()
+  update_positions()
   keep_player_inside()
   update_all_frames()
 end
@@ -144,20 +153,10 @@ end
 -->8
 -- update helpers
 
-function update_all_positions()
-  update_player_position()
-  if not cat.dead then
-    update_cat_position()
+function update_positions()
+  for character in all(characters) do
+    character:update_position()
   end
-end
-
-function update_player_position()
-  update_sprite_position(player, move_player)
-end
-
-function update_cat_position()
-  update_sprite_position(cat, move_cat_x)
-  update_sprite_position(cat, move_cat_y)
 end
 
 function update_sprite_position(obj, move)
@@ -370,7 +369,7 @@ function draw_game_over()
   elseif game.is_lost then
     message = "game over"
   end
-  print(message, x1 + 14, y1 + 10, 12)
+  print(message, x1 + 14, y1 + 10, 9)
 end
 
 __gfx__
