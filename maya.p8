@@ -9,7 +9,6 @@ function _init()
   define_flags()
   init_player()
   init_cat()
-  init_characters()
   init_energy()
   init_tile()
   init_camera()
@@ -17,11 +16,13 @@ function _init()
 end
 
 function _update()
-  update_position()
-  update_orientation()
-  update_inventory()
-  update_status()
-  update_camera()
+  if not game.is_over then
+    update_position()
+    update_orientation()
+    update_inventory()
+    update_status()
+    update_camera()
+  end
 end
 
 function _draw()
@@ -35,6 +36,9 @@ function _draw()
 end
 -->8
 -- init
+
+characters = {}
+
 function define_flags()
   flag = {
     blocked = 0,
@@ -61,6 +65,7 @@ function init_player()
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x)
     end
   }
+  add(characters, player)
 end
 
 function init_cat()
@@ -81,13 +86,7 @@ function init_cat()
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x, self.dead)
     end
   }
-end
-
-function init_characters()
-  characters = {
-    player,
-    cat
-  }
+  add(characters, cat)
 end
 
 function init_energy()
