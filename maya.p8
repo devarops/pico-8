@@ -31,13 +31,13 @@ function _draw()
   else
     draw_map()
     draw_camera()
-    draw_characters()
+    draw_entities()
   end
 end
 -->8
 -- init
 
-characters = {}
+entities = {}
 
 function define_flags()
   flag = {
@@ -59,13 +59,14 @@ function init_player()
     energy = 0,
     cheese = 0,
     update_position = function(self)
-      update_sprite_position(self, move_player)
+      update_sprite_position(self, move_player_x)
+      update_sprite_position(self, move_player_y)
     end,
     draw = function(self)
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x)
     end
   }
-  add(characters, player)
+  add(entities, player)
 end
 
 function init_cat()
@@ -86,7 +87,7 @@ function init_cat()
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x, self.dead)
     end
   }
-  add(characters, cat)
+  add(entities, cat)
 end
 
 function init_energy()
@@ -153,8 +154,8 @@ end
 -- update helpers
 
 function update_positions()
-  for character in all(characters) do
-    character:update_position()
+  for entity in all(entities) do
+    entity:update_position()
   end
 end
 
@@ -166,12 +167,22 @@ function update_sprite_position(obj, move)
   end
 end
 
-function move_player(obj)
+function move_player_x(obj)
   local x = obj.x
   local y = obj.y
   local delta = obj.delta
   if (btn(⬅️)) x -= delta
   if (btn(➡️)) x += delta
+  local new_position = {}
+  new_position.x = x
+  new_position.y = y
+  return new_position
+end
+
+function move_player_y(obj)
+  local x = obj.x
+  local y = obj.y
+  local delta = obj.delta
   if (btn(⬆️)) y -= delta
   if (btn(⬇️)) y += delta
   local new_position = {}
@@ -351,9 +362,9 @@ function draw_camera()
   camera(cam.x)
 end
 
-function draw_characters()
-  for character in all(characters) do
-    character:draw()
+function draw_entities()
+  for entity in all(entities) do
+    entity:draw()
   end
 end
 
