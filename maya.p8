@@ -7,8 +7,8 @@ __lua__
 
 function _init()
   define_flags()
-  init_player()
   init_cat()
+  init_player()
   init_energy()
   init_tile()
   init_camera()
@@ -55,12 +55,31 @@ function init_player()
     delta = nil,
     sprite = nil,
     flip_x = false,
-    flip_y = false,
+    dead = false,
     energy = 0,
     cheese = 0,
-    update_position = function(self)
-      update_sprite_position(self, move_player_x)
-      update_sprite_position(self, move_player_y)
+    update_position = function(self) _update_position(self) end,
+    move_x = function(self)
+      local x = self.x
+      local y = self.y
+      local delta = self.delta
+      if (btn(⬅️)) x -= delta
+      if (btn(➡️)) x += delta
+      local new_position = {}
+      new_position.x = x
+      new_position.y = y
+      return new_position
+    end,
+    move_y = function(self)
+      local x = self.x
+      local y = self.y
+      local delta = self.delta
+      if (btn(⬆️)) y -= delta
+      if (btn(⬇️)) y += delta
+      local new_position = {}
+      new_position.x = x
+      new_position.y = y
+      return new_position
     end,
     draw = function(self)
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x)
@@ -77,11 +96,33 @@ function init_cat()
     sprite = 17,
     flip_x = false,
     dead = false,
-    update_position = function(self)
-      if not self.dead then
-        update_sprite_position(self, move_cat_x)
-        update_sprite_position(self, move_cat_y)
+    update_position = function(self) _update_position(self) end,
+    move_x = function(self)
+      local x = self.x
+      local y = self.y
+      local delta = self.delta
+      if abs(x - player.x) > delta then
+        if player.x < x then
+          x -= delta
+        elseif player.x > x then
+          x += delta
+        end
       end
+      local new_position = {}
+      new_position.x = x
+      new_position.y = y
+      return new_position
+    end,
+    move_y = function(self)
+      local x = self.x
+      local y = self.y
+      local delta = self.delta
+      if (player.y < y) y -= delta
+      if (player.y > y) y += delta
+      local new_position = {}
+      new_position.x = x
+      new_position.y = y
+      return new_position
     end,
     draw = function(self)
       spr(self.sprite, self.x, self.y, 1, 1, self.flip_x, self.dead)
@@ -159,65 +200,19 @@ function update_positions()
   end
 end
 
-function update_sprite_position(obj, move)
-  local new_position = move(obj)
-  if not is_blocked(new_position) then
-    obj.x = new_position.x
-    obj.y = new_position.y
-  end
-end
-
-function move_player_x(obj)
-  local x = obj.x
-  local y = obj.y
-  local delta = obj.delta
-  if (btn(⬅️)) x -= delta
-  if (btn(➡️)) x += delta
-  local new_position = {}
-  new_position.x = x
-  new_position.y = y
-  return new_position
-end
-
-function move_player_y(obj)
-  local x = obj.x
-  local y = obj.y
-  local delta = obj.delta
-  if (btn(⬆️)) y -= delta
-  if (btn(⬇️)) y += delta
-  local new_position = {}
-  new_position.x = x
-  new_position.y = y
-  return new_position
-end
-
-function move_cat_x(obj)
-  local x = obj.x
-  local y = obj.y
-  local delta = obj.delta
-  if abs(x - player.x) > delta then
-    if player.x < x then
-      x -= delta
-    elseif player.x > x then
-      x += delta
+function _update_position(obj)
+  if not obj.dead then
+    local new_position = obj.move_x(obj)
+    if not is_blocked(new_position) then
+      obj.x = new_position.x
+      obj.y = new_position.y
+    end
+    local new_position = obj.move_y(obj)
+    if not is_blocked(new_position) then
+      obj.x = new_position.x
+      obj.y = new_position.y
     end
   end
-  local new_position = {}
-  new_position.x = x
-  new_position.y = y
-  return new_position
-end
-
-function move_cat_y(obj)
-  local x = obj.x
-  local y = obj.y
-  local delta = obj.delta
-  if (player.y < y) y -= delta
-  if (player.y > y) y += delta
-  local new_position = {}
-  new_position.x = x
-  new_position.y = y
-  return new_position
 end
 
 function keep_player_inside()
