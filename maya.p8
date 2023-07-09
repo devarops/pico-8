@@ -18,8 +18,11 @@ end
 function _update()
   if not game.is_over then
     update_position()
+    keep_player_inside()
+    update_frame()
     update_orientation()
     update_inventory()
+    update_energy_status()
     update_status()
     update_camera()
   end
@@ -49,65 +52,131 @@ function define_flags()
 end
 
 function init_player()
-  player = {
-    x = 60,
-    y = 60,
-    delta = nil,
-    sprite = nil,
-    flip_x = false,
-    dead = false,
-    energy = 0,
-    cheese = 0,
-    update_position = function(self) _update_position(self) end,
-    move_x = function(self)
-      local x = self.x
-      local y = self.y
-      local delta = self.delta
-      if (btn(⬅️)) x -= delta
-      if (btn(➡️)) x += delta
-      local new_position = {}
-      new_position.x = x
-      new_position.y = y
-      return new_position
-    end,
-    move_y = function(self)
-      local x = self.x
-      local y = self.y
-      local delta = self.delta
-      if (btn(⬆️)) y -= delta
-      if (btn(⬇️)) y += delta
-      local new_position = {}
-      new_position.x = x
-      new_position.y = y
-      return new_position
-    end,
-    draw = function(self)
-      spr(self.sprite, self.x, self.y, 1, 1, self.flip_x)
+  player = init_entity()
+  player.x = 60
+  player.y = 60
+  player.is_foe = false
+  player.update_status = function(self)
+    local function is_player_caught_by(foe)
+      diff_x = abs(self.x - foe.x)
+      diff_y = abs(self.y - foe.y)
+      return diff_x < 6 and diff_y < 6 and not foe.is_dead
     end
-  }
+    for foe in all(entities) do
+      if foe.is_foe then
+        if is_player_caught_by(foe) then
+          self.is_dead = true
+          game.is_over = true
+        end
+      end
+    end
+    if self.cheese >= 3 then
+      self.is_dead = false
+      game.is_over = true
+    end
+  end
+  player.move_x = function(self)
+    local x = self.x
+    local y = self.y
+    local delta = self.delta
+    if (btn(⬅️)) x -= delta
+    if (btn(➡️)) x += delta
+    local new_position = {}
+    new_position.x = x
+    new_position.y = y
+    return new_position
+  end
+  player.move_y = function(self)
+    local x = self.x
+    local y = self.y
+    local delta = self.delta
+    if (btn(⬆️)) y -= delta
+    if (btn(⬇️)) y += delta
+    local new_position = {}
+    new_position.x = x
+    new_position.y = y
+    return new_position
+  end
+  player.update_orientation = function(self)
+    if (btnp(⬅️)) self.flip_x = true
+    if (btnp(➡️)) self.flip_x = false
+  end
+  player.update_frame = function(self)
+    local base_sprite = 1
+    if energy.is_timer_running then
+      base_sprite = 3
+    end
+    self.sprite = (self.x + self.y) % 2 + base_sprite
+  end
   add(entities, player)
 end
 
 function init_cat()
-  cat = {
-    x = 9 * 8,
-    y = 1 * 8,
-    delta = 0.9,
-    sprite = 17,
+  local cat = init_entity()
+  cat.x = 9 * 8
+  cat.y = 1 * 8
+  cat.delta = 0.9
+  cat.update_status = function(self)
+    if player.cheese == 1 then
+      self.is_dead = true
+    end
+  end
+  cat.move_x = function(self)
+    local x = self.x
+    local y = self.y
+    local delta = self.delta
+    if abs(x - player.x) > delta then
+      if player.x < x then
+        x -= delta
+      elseif player.x > x then
+        x += delta
+      end
+    end
+    local new_position = {}
+    new_position.x = x
+    new_position.y = y
+    return new_position
+  end
+  cat.move_y = function(self)
+    local x = self.x
+    local y = self.y
+    local delta = self.delta
+    if (player.y < y) y -= delta
+    if (player.y > y) y += delta
+    local new_position = {}
+    new_position.x = x
+    new_position.y = y
+    return new_position
+  end
+  cat.update_orientation = function(self)
+    self.flip_x = self.x > player.x
+  end
+  cat.update_frame = function(self)
+    local base_sprite = 17
+    self.sprite = (self.x + self.y) % 2 + base_sprite
+  end
+  add(entities, cat)
+end
+
+function init_entity()
+  return {
+    x = 0,
+    y = 0,
+    width = 8,
+    height = 8,
+    delta = nil,
+    sprite = nil,
     flip_x = false,
-    dead = false,
-    update_position = function(self) _update_position(self) end,
+    is_dead = false,
+    is_foe = true,
+    energy = 0,
+    cheese = 0,
+    update_status = function(self)
+    end,
     move_x = function(self)
       local x = self.x
       local y = self.y
       local delta = self.delta
-      if abs(x - player.x) > delta then
-        if player.x < x then
-          x -= delta
-        elseif player.x > x then
-          x += delta
-        end
-      end
       local new_position = {}
       new_position.x = x
       new_position.y = y
@@ -117,18 +186,33 @@ function init_cat()
       local x = self.x
       local y = self.y
       local delta = self.delta
-      if (player.y < y) y -= delta
-      if (player.y > y) y += delta
       local new_position = {}
       new_position.x = x
       new_position.y = y
       return new_position
     end,
+    update_position = function(self)
+      if not self.is_dead then
+        local new_position = self.move_x(self)
+        if not is_blocked(new_position) then
+          self.x = new_position.x
+          self.y = new_position.y
+        end
+        local new_position = self.move_y(self)
+        if not is_blocked(new_position) then
+          self.x = new_position.x
+          self.y = new_position.y
+        end
+      end
+    end,
+    update_orientation = function(self)
+    end,
+    update_frame = function(self)
+    end,
     draw = function(self)
-      spr(self.sprite, self.x, self.y, 1, 1, self.flip_x, self.dead)
+      spr(self.sprite, self.x, self.y, 1, 1, self.flip_x, self.is_dead)
     end
   }
-  add(entities, cat)
 end
 
 function init_energy()
@@ -154,23 +238,16 @@ end
 function init_game()
   game = {
     is_over = false,
-    is_won = false,
-    is_lost = false,
     is_debug = false
   }
 end
 -->8
 -- update
 
-function update_position()
-  update_positions()
-  keep_player_inside()
-  update_all_frames()
-end
-
 function update_orientation()
-  update_player_orientation()
-  update_cat_orientation()
+  for entity in all(entities) do
+    entity:update_orientation()
+  end
 end
 
 function update_inventory()
@@ -180,10 +257,9 @@ function update_inventory()
 end
 
 function update_status()
-  update_energy_status()
-  update_cat_status()
-  update_caught_status()
-  update_won_status()
+  for entity in all(entities) do
+    entity:update_status()
+  end
 end
 
 function update_camera()
@@ -194,24 +270,9 @@ end
 -->8
 -- update helpers
 
-function update_positions()
+function update_position()
   for entity in all(entities) do
     entity:update_position()
-  end
-end
-
-function _update_position(obj)
-  if not obj.dead then
-    local new_position = obj.move_x(obj)
-    if not is_blocked(new_position) then
-      obj.x = new_position.x
-      obj.y = new_position.y
-    end
-    local new_position = obj.move_y(obj)
-    if not is_blocked(new_position) then
-      obj.x = new_position.x
-      obj.y = new_position.y
-    end
   end
 end
 
@@ -221,31 +282,10 @@ function keep_player_inside()
   player.y = mid(0, player.y, 128 - 9)
 end
 
-function update_all_frames()
-  update_player_frame()
-  update_cat_frame()
-end
-
-function update_player_frame()
-  local base_sprite = 1
-  if energy.is_timer_running then
-    base_sprite = 3
+function update_frame()
+  for entity in all(entities) do
+    entity:update_frame()
   end
-  player.sprite = (player.x + player.y) % 2 + base_sprite
-end
-
-function update_cat_frame()
-  local base_sprite = 17
-  cat.sprite = (cat.x + cat.y) % 2 + base_sprite
-end
-
-function update_player_orientation()
-  if (btnp(⬅️)) player.flip_x = true
-  if (btnp(➡️)) player.flip_x = false
-end
-
-function update_cat_orientation()
-  cat.flip_x = cat.x > player.x
 end
 
 function is_blocked(obj)
@@ -320,31 +360,6 @@ function update_energy_status()
   player.delta = player.energy + 1
 end
 
-function update_caught_status()
-  if is_caught() then
-    game.is_lost = true
-    game.is_over = true
-  end
-end
-
-function is_caught()
-  diff_x = abs(player.x - cat.x)
-  diff_y = abs(player.y - cat.y)
-  return diff_x < 6 and diff_y < 6 and not cat.dead
-end
-
-function update_cat_status()
-  if player.cheese == 1 then
-    cat.dead = true
-  end
-end
-
-function update_won_status()
-  if player.cheese >= 3 then
-    game.is_won = true
-    game.is_over = true
-  end
-end
 -->8
 -- draw
 
@@ -369,10 +384,10 @@ function draw_game_over()
   local x2 = flr(player.x / 128) * 128 + 128 / 2 + 30
   local y2 = flr(player.y / 128) * 128 + 128 / 2 + 5
   rectfill(x1, y1, x2, y2, 1)
-  if game.is_won then
-    message = "you won!"
-  elseif game.is_lost then
+  if player.is_dead then
     message = "game over"
+  else
+    message = "you won!"
   end
   print(message, x1 + 14, y1 + 10, 9)
 end
