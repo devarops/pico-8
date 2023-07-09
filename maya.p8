@@ -22,7 +22,7 @@ function _update()
     update_frame()
     update_orientation()
     update_inventory()
-    update_energy_status()
+    update_energy()
     update_status()
     update_camera()
   end
@@ -34,7 +34,7 @@ function _draw()
   else
     draw_map()
     draw_camera()
-    draw_entities()
+    draw()
   end
 end
 -->8
@@ -350,9 +350,9 @@ function remove_food()
   mset(tile.x_map, tile.y_map, 0)
 end
 
-function update_energy_status()
+function update_energy()
   if player.energy > 0 then
-    energy.is_timer_running = time() - energy.time < energy.timer
+    energy.is_timer_running = (time() - energy.time) < energy.timer
     if not energy.is_timer_running then
       player.energy = 0
     end
@@ -372,7 +372,7 @@ function draw_camera()
   camera(cam.x)
 end
 
-function draw_entities()
+function draw()
   for entity in all(entities) do
     entity:draw()
   end
